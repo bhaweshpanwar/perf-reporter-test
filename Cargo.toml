@@ -1,0 +1,11 @@
+[package]
+name = "perffarm-reporter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+reqwest = "0.11"
+scraper = "0.19"
+serde = { version = "1.0", features = ["derive"] }
+tera = "1"
