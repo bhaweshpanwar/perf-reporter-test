@@ -3,8 +3,6 @@ use scraper::{ElementRef, Html, Selector};
 use serde::Serialize;
 use tera::Tera;
 
-
-
 #[derive(Serialize, Debug)]
 struct PerfResult {
     scale: String,
@@ -14,13 +12,11 @@ struct PerfResult {
     metric: f64,
 }
 
-
 pub struct AppState {
     tera: Tera,
     buildbot_url: String,
     postgres_commit_url: String,
 }
-
 
 #[get("/")]
 async fn welcome() -> impl Responder {
@@ -123,7 +119,6 @@ async fn mock_pf_test(
             }
         }
     }
-    
 
     let mut context = tera::Context::new();
     context.insert("buildbot_url", &data.buildbot_url);
@@ -134,9 +129,10 @@ async fn mock_pf_test(
     context.insert("unit", "Warehouses"); 
     context.insert("plant", &plant);
 
+
     let rendered = data
         .tera
-        .render("/templates/test_plant.html.tera", &context)
+        .render("test_plant.html.tera", &context)
         .map_err(|e| {
             eprintln!("Template rendering error: {}", e);
             actix_web::error::ErrorInternalServerError("Template error")
@@ -147,10 +143,10 @@ async fn mock_pf_test(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Initialize Tera
+
     let tera = Tera::new("templates/**/*").expect("Failed to parse Tera templates.");
 
-    println!("🚀 Server starting at http://127.0.0.1:8080");
+    println!("🚀 Server starting at http://0.0.0.0:8080");
 
     HttpServer::new(move || {
         App::new()
@@ -159,6 +155,7 @@ async fn main() -> std::io::Result<()> {
                 buildbot_url: "http://140.211.11.131:8010".to_string(),
                 postgres_commit_url: "https://github.com/postgres/postgres/commit/".to_string(),
             }))
+            // This serves files from the 'static' directory at the '/static' URL.
             .service(actix_files::Files::new("/static", "./static"))
             .service(welcome)
             .service(mock_pf_test)
