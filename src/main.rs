@@ -129,7 +129,7 @@ async fn mock_pf_test(
     context.insert("postgres_commit_url", &data.postgres_commit_url);
     context.insert("scales", &results); 
     context.insert("metric_name", "New Orders per Minute"); 
-    context.insert("title", &format!("{} Test Results", test)); 
+    context.insert("title", &format!("{}", test)); 
     context.insert("unit", "Warehouses"); 
     context.insert("plant", &plant);
 
