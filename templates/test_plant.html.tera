@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - {{ plant }}</title>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+     <!-- Inter Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Link CSS files -->
+    <link rel="stylesheet" href="/static/wip/styles/chart.css" />
+    <link rel="stylesheet" href="/static/wip/styles/layout.css" />
+
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>{{ title }} Test Results on {{ plant }}</h1>
+        </div>
+        <div>
+          <p id="lastUpdated"></p>
+        </div>
+      </header>
+
+            <section class="filter-controls">
+        <div class="filter-group">
+          <label for="chooseScale" class="form-label">Scale Factor</label>
+          <select
+            id="chooseScale"
+            name="chooseScale"
+            class="form-select"
+          ></select>
+        </div>
+        <div class="filter-group branch-filter">
+          <label for="branch-select-button" class="form-label"
+            >Choose Branches</label
+          >
+          <button id="branch-select-button">Select Branches</button>
+          <div id="branch-filter-dropdown">
+            <div class="branch-filter-actions">
+              <button id="branch-select-all">Select All</button>
+              <button id="branch-deselect-all">Deselect All</button>
+            </div>
+            <div id="branch-list-container"></div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="form-label">Y-Axis Mode</label>
+          <fieldset class="y-axis-toggle-fieldset">
+            <div class="y-axis-toggle-container">
+              <input
+                type="radio"
+                id="mode-zero"
+                name="y_axis_mode"
+                value="zero"
+                checked
+              />
+              <label for="mode-zero">From 0</label>
+
+              <input
+                type="radio"
+                id="mode-zoom"
+                name="y_axis_mode"
+                value="zoom"
+              />
+              <label for="mode-zoom">Zoomed</label>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+      <svg id="chart-svg" style="background-color: #f3f4f669"></svg>
+      <div id="legend-container" class="legend-container"></div>
+
+        <footer>
+        <h3>Chart Controls</h3>
+        <ul>
+          <li>
+            <strong>Zoom:</strong> To inspect a specific time range, use one of
+            two methods:
+            <ul>
+              <li>
+                Click and drag horizontally across the
+                <span>lower context chart</span>.
+              </li>
+              <li>
+                Click and drag horizontally directly on the
+                <span>main chart</span>.
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>Inspect Data:</strong> Hover over any data point on the main
+            chart to view detailed information for that specific test run.
+          </li>
+          <li>
+            <strong>Pan:</strong> Once zoomed in, pan the view left or right
+            using the <kbd>Arrow Keys</kbd>.
+          </li>
+          <li>
+            <strong>Reset View:</strong> To return to the full time range,
+            double-click anywhere on the main chart or press the
+            <kbd>Esc</kbd> key.
+          </li>
+        </ul>
+      </footer>
+      <div class="tooltip"></div>
+    </main>
+  </body>
+    <script>
+      // Tera will take the 'scales' data structure from Rust,
+      // convert it into a JSON string, and print it here.
+      // The 'safe' filter is crucial to prevent Tera from escaping the quotes.
+      const INITIAL_DATA = {{ scales | json_encode(pretty=false) | safe }};
+    </script>
+    <script src="/static/wip/scripts/script.js"></script>
+</html>

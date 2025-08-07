@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+actix-files = "0.6.6"
 actix-web = "4"
 reqwest = "0.11"
 scraper = "0.19"
