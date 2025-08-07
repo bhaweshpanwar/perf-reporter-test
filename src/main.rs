@@ -4,6 +4,7 @@ use serde::Serialize;
 use tera::Tera;
 
 
+
 #[derive(Serialize, Debug)]
 struct PerfResult {
     scale: String,
@@ -135,7 +136,7 @@ async fn mock_pf_test(
 
     let rendered = data
         .tera
-        .render("test_plant.html.tera", &context)
+        .render("/templates/test_plant.html.tera", &context)
         .map_err(|e| {
             eprintln!("Template rendering error: {}", e);
             actix_web::error::ErrorInternalServerError("Template error")
