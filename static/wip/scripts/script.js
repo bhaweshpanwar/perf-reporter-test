@@ -43,23 +43,102 @@ let currentChartData = [];
 //     .catch(handleError);
 // });
 
-// Application entry point
+// // Application entry point
+// document.addEventListener('DOMContentLoaded', () => {
+//   cacheDOMElements();
+
+//   console.log("Data successfully received from server via 'Data Island'.");
+
+//   // Use the new, corrected function to transform the flat data.
+//   allData = transformFlatDataForChart(INITIAL_DATA);
+
+//   // The rest of your app initialization is exactly the same!
+//   const counts = d3.rollup(
+//     allData,
+//     (v) => v.length,
+//     (d) => d.scale
+//   );
+//   scaleDataCounts = new Map(counts);
+//   initializeApp(allData);
+// });
+
+// // Make sure this is the active entry point in your script SSR
+// document.addEventListener('DOMContentLoaded', () => {
+//   cacheDOMElements();
+
+//   // Get the CSV data from the DOM (SSR approach)
+//   const csvText = document.getElementById('csv-data').textContent;
+
+//   allData = parseCSV(csvText).map((d) => ({
+//     branch: d.branch || 'unknown',
+//     revision: d.revision,
+//     scale: +d.scale,
+//     // --- MODIFIED LINE ---
+//     // d.ctime is now a date string like "2024-01-23 11:32:04+00",
+//     // which new Date() can parse directly.
+//     ctime: new Date(d.ctime),
+//     metric: +d.metric,
+//     commit_message: d.commit_message || `Commit: ${d.revision}`,
+//   }));
+
+//   const counts = d3.rollup(
+//     allData,
+//     (v) => v.length,
+//     (d) => d.scale
+//   );
+//   scaleDataCounts = new Map(counts);
+//   initializeApp(allData);
+// });
+
+// This becomes the active entry point for the CSR model
 document.addEventListener('DOMContentLoaded', () => {
   cacheDOMElements();
 
-  console.log("Data successfully received from server via 'Data Island'.");
+  // --- NEW CSR LOGIC ---
+  // 1. Get test and plant name from the browser's URL
+  // e.g., for a URL like "http://localhost:8080/mock/dbt2/plant",
+  // pathname is "/mock/dbt2/plant"
+  const pathParts = window.location.pathname.split('/').filter((p) => p);
+  const test = pathParts[1];
+  const plant = pathParts[2];
 
-  // Use the new, corrected function to transform the flat data.
-  allData = transformFlatDataForChart(INITIAL_DATA);
+  // 2. Check if we have the required parts, otherwise show an error.
+  if (!test || !plant) {
+    handleError(new Error('Could not determine test and plant from URL.'));
+    return;
+  }
 
-  // The rest of your app initialization is exactly the same!
-  const counts = d3.rollup(
-    allData,
-    (v) => v.length,
-    (d) => d.scale
-  );
-  scaleDataCounts = new Map(counts);
-  initializeApp(allData);
+  // 3. Construct the API URL
+  const apiUrl = `/api/pf/${test}/${plant}`;
+
+  // 4. Fetch the data from the new API endpoint
+  fetch(apiUrl)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      }
+      return response.json(); // The Rust backend now sends JSON
+    })
+    .then((dataFromApi) => {
+      // 5. Transform the API data into the format the chart expects
+      allData = dataFromApi.map((d) => ({
+        branch: d.branch,
+        revision: d.commit, // Map `commit` from API to `revision`
+        scale: +(d.scale.match(/(\d+)/)?.[1] || 0), // Extract number from "100 Warehouses"
+        ctime: new Date(d.commit_date), // Convert date string to Date object
+        metric: +d.metric,
+        commit_message: `Commit: ${d.commit}`,
+      }));
+
+      const counts = d3.rollup(
+        allData,
+        (v) => v.length,
+        (d) => d.scale
+      );
+      scaleDataCounts = new Map(counts);
+      initializeApp(allData);
+    })
+    .catch(handleError);
 });
 
 /**
@@ -113,6 +192,19 @@ function cacheDOMElements() {
     branchDeselectAll: document.getElementById('branch-deselect-all'),
     modeZero: document.getElementById('mode-zero'),
     modeZoom: document.getElementById('mode-zoom'),
+  });
+}
+
+function parseCSV(csvText) {
+  const lines = csvText.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map((h) => h.trim());
+  return lines.slice(1).map((line) => {
+    const values = line.match(/(".*?"|[^",\n]+)(?=\s*,|\s*$)/g) || [];
+    return headers.reduce((obj, header, i) => {
+      obj[header] = values[i] ? values[i].replace(/^"|"$/g, '').trim() : '';
+      return obj;
+    }, {});
   });
 }
 

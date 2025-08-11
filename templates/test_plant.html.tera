@@ -84,6 +84,12 @@
       <svg id="chart-svg" style="background-color: #f3f4f669"></svg>
       <div id="legend-container" class="legend-container"></div>
 
+      <section>
+        <h2>CSV Results</h2>
+        <pre id="csv-data">{{ csv_data | safe }}</pre>
+      </section>
+
+
         <footer>
         <h3>Chart Controls</h3>
         <ul>
