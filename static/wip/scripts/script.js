@@ -588,7 +588,7 @@ function renderChart(data, colorScale) {
 
   setupTooltip(branchCircles, colorScale, xScale, yScale, margin);
 
-  chart.on('dblclick', resetZoom);
+  clipArea.on('dblclick', resetZoom);
   svg
     .on('mouseover', () => window.addEventListener('keydown', handleKeyDown))
     .on('mouseout', () => window.removeEventListener('keydown', handleKeyDown));
