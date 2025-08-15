@@ -1,1 +1,9 @@
 /target
+/.vscode
+/.idea
+/node_modules
+/.DS_Store
+/.env
+/static/dist
+/.cache
+/.next

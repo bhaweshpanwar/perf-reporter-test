@@ -1,3 +1,23 @@
+import {
+  select,
+  rollup,
+  max,
+  min,
+  extent,
+  group,
+  scaleTime,
+  scaleLinear,
+  scaleOrdinal,
+  schemeTableau10,
+  axisBottom,
+  axisLeft,
+  timeFormat,
+  line as d3Line, // rename to avoid conflict with 'line' variable
+  brushX,
+  easeCubicInOut,
+  transition, // you often don't need to import this explicitly
+} from 'd3';
+
 let allData = [];
 let scaleDataCounts = new Map();
 const currentFilters = { scale: null, branches: [] };
@@ -32,7 +52,7 @@ let currentChartData = [];
 //       allData = transformNestedDataToFlatArray(nestedData);
 
 //       // The rest of the initialization is the same!
-//       const counts = d3.rollup(
+//       const counts =  rollup(
 //         allData,
 //         (v) => v.length,
 //         (d) => d.scale
@@ -50,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   allData = transformNestedDataToFlatArray(INITIAL_DATA);
 
   // The rest of your app initialization is exactly the same!
-  const counts = d3.rollup(
+  const counts = rollup(
     allData,
     (v) => v.length,
     (d) => d.scale
@@ -78,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //     commit_message: d.commit_message || `Commit: ${d.revision}`,
 //   }));
 
-//   const counts = d3.rollup(
+//   const counts =  rollup(
 //     allData,
 //     (v) => v.length,
 //     (d) => d.scale
@@ -127,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //         commit_message: `Commit: ${d.commit}`,
 //       }));
 
-//       const counts = d3.rollup(
+//       const counts =  rollup(
 //         allData,
 //         (v) => v.length,
 //         (d) => d.scale
@@ -143,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * Transforms the flat data array from the Actix backend into the format
  * required by the D3 chart.
  * @param {Array<object>} initialData - The flat array from the backend.
- * @returns {Array<object>} A flat array of result objects ready for D3.
+ * @returns {Array<object>} A flat array of result objects ready for
  */
 function transformNestedDataToFlatArray(nestedData) {
   const flatArray = [];
@@ -186,10 +206,10 @@ function initializeApp(data) {
 
 function cacheDOMElements() {
   Object.assign(DOMElements, {
-    svg: d3.select('#chart-svg'),
-    tooltip: d3.select('.tooltip'),
+    svg: select('#chart-svg'),
+    tooltip: select('.tooltip'),
     scaleFilter: document.getElementById('chooseScale'),
-    legendContainer: d3.select('#legend-container'),
+    legendContainer: select('#legend-container'),
     lastUpdated: document.getElementById('lastUpdated'),
     branchSelectButton: document.getElementById('branch-select-button'),
     branchFilterDropdown: document.getElementById('branch-filter-dropdown'),
@@ -252,11 +272,11 @@ function updateYAxis(data, duration = 250) {
   const visibleData = data.filter((d) => d.ctime >= xMin && d.ctime <= xMax);
 
   if (yAxisMode === 'zoom' && visibleData.length > 0) {
-    const yMin = d3.min(visibleData, (d) => d.metric);
-    const yMax = d3.max(visibleData, (d) => d.metric);
+    const yMin = min(visibleData, (d) => d.metric);
+    const yMax = max(visibleData, (d) => d.metric);
     yScale.domain([yMin * 0.95, yMax * 1.05]);
   } else {
-    const yMax = d3.max(data, (d) => d.metric);
+    const yMax = max(data, (d) => d.metric);
     yScale.domain([0, yMax * 1.05]);
   }
 
@@ -346,7 +366,7 @@ function applyFiltersAndRender() {
     .reverse();
   console.log('All branches for scale (ordered):', allBranchesForScale);
   const colorScale = d3
-    .scaleOrdinal(d3.schemeTableau10)
+    .scaleOrdinal(schemeTableau10)
     .domain(allBranchesForScale);
 
   console.log('ColorScale domain set to:', colorScale.domain());
@@ -431,18 +451,18 @@ function renderChart(data, colorScale) {
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = mainChartHeight - margin.top - margin.bottom;
 
-  const xInitialDomain = d3.extent(data, (d) => d.ctime);
-  const yInitialDomain = [0, d3.max(data, (d) => d.metric) * 1.05];
+  const xInitialDomain = extent(data, (d) => d.ctime);
+  const yInitialDomain = [0, max(data, (d) => d.metric) * 1.05];
 
-  xScale = d3.scaleTime().domain(xInitialDomain).range([0, chartWidth]);
-  yScale = d3.scaleLinear().domain(yInitialDomain).range([chartHeight, 0]);
+  xScale = scaleTime().domain(xInitialDomain).range([0, chartWidth]);
+  yScale = scaleLinear().domain(yInitialDomain).range([chartHeight, 0]);
 
   const yAxisMode = document.querySelector(
     'input[name="y_axis_mode"]:checked'
   ).value;
   if (yAxisMode === 'zoom') {
-    const yMin = d3.min(data, (d) => d.metric);
-    yScale.domain([yMin * 0.95, d3.max(data, (d) => d.metric) * 1.05]);
+    const yMin = min(data, (d) => d.metric);
+    yScale.domain([yMin * 0.95, max(data, (d) => d.metric) * 1.05]);
   }
 
   const chart = svg
@@ -456,10 +476,10 @@ function renderChart(data, colorScale) {
     .attr('width', chartWidth)
     .attr('height', chartHeight);
 
-  xAxis = d3.axisBottom(xScale).ticks(5).tickFormat(d3.timeFormat('%b %d, %Y'));
-  yAxis = d3.axisLeft(yScale).ticks(8);
-  xGrid = d3.axisBottom(xScale).ticks(5).tickSize(-chartHeight).tickFormat('');
-  yGrid = d3.axisLeft(yScale).tickSize(-chartWidth).tickFormat('');
+  xAxis = axisBottom(xScale).ticks(5).tickFormat(timeFormat('%b %d, %Y'));
+  yAxis = axisLeft(yScale).ticks(8);
+  xGrid = axisBottom(xScale).ticks(5).tickSize(-chartHeight).tickFormat('');
+  yGrid = axisLeft(yScale).tickSize(-chartWidth).tickFormat('');
 
   chart
     .append('g')
@@ -484,7 +504,7 @@ function renderChart(data, colorScale) {
     .line()
     .x((d) => xScale(d.ctime))
     .y((d) => yScale(d.metric));
-  const groupedData = d3.group(data, (d) => d.branch);
+  const groupedData = group(data, (d) => d.branch);
 
   clipArea
     .selectAll('.line')
@@ -501,8 +521,8 @@ function renderChart(data, colorScale) {
     .append('g')
     .attr('class', 'context')
     .attr('transform', `translate(${margin.left}, ${contextTopPosition})`);
-  const xScale2 = d3.scaleTime().domain(xInitialDomain).range([0, chartWidth]);
-  const yContextDomain = [0, d3.max(data, (d) => d.metric) * 1.05];
+  const xScale2 = scaleTime().domain(xInitialDomain).range([0, chartWidth]);
+  const yContextDomain = [0, max(data, (d) => d.metric) * 1.05];
   const yScale2 = d3
     .scaleLinear()
     .domain(yContextDomain)
@@ -529,7 +549,7 @@ function renderChart(data, colorScale) {
       d3
         .axisBottom(xScale2)
         .ticks(width / 100)
-        .tickFormat(d3.timeFormat('%b %Y'))
+        .tickFormat(timeFormat('%b %Y'))
     );
 
   // --- START OF UPDATED BRUSH LOGIC ---
@@ -603,7 +623,7 @@ function renderChart(data, colorScale) {
     .on('mouseout', () => window.removeEventListener('keydown', handleKeyDown));
 
   function redrawChart(duration = 500) {
-    const t = svg.transition().duration(duration).ease(d3.easeCubicInOut);
+    const t = svg.transition().duration(duration).ease(easeCubicInOut);
     xAxisGroup.transition(t).call(xAxis.scale(xScale));
     chart.select('.x-grid').transition(t).call(xGrid.scale(xScale));
     updateYAxis(currentChartData, duration);
@@ -660,17 +680,17 @@ function renderChart(data, colorScale) {
 
 function setupTooltip(circles, colorScale, xScale, yScale, margin) {
   const tooltip = DOMElements.tooltip;
-  const container = d3.select('main');
+  const container = select('main');
 
   circles
     .style('cursor', 'pointer')
     .on('mouseover', function (event, d) {
-      const circle = d3.select(this).style('cursor', 'pointer').attr('r', 7);
+      const circle = select(this).style('cursor', 'pointer').attr('r', 7);
 
       // Set content and make tooltip visible to measure its size
       tooltip
         .html(
-          `<div class="tooltip-date">${d3.timeFormat('%A, %B %d, %Y')(
+          `<div class="tooltip-date">${timeFormat('%A, %B %d, %Y')(
             d.ctime
           )}</div><div class="version-item"><span class="version-color" style="background-color:${colorScale(
             d.branch
@@ -753,7 +773,7 @@ function setupTooltip(circles, colorScale, xScale, yScale, margin) {
         .style('top', `${finalPlacement.y}px`);
     })
     .on('mouseout', function () {
-      d3.select(this).style('cursor', 'pointer').transition().attr('r', 4);
+      select(this).style('cursor', 'pointer').transition().attr('r', 4);
 
       setTimeout(() => {
         if (!tooltip.node().matches(':hover')) {
@@ -802,7 +822,7 @@ function renderLegend(branches, colorScale) {
     .html((d) => `${BRANCH_ICON_SVG}<span>${d}</span>`)
     .each(function (d) {
       console.log(`Setting color for branch ${d}:`, colorScale(d));
-      d3.select(this).select('svg path').attr('fill', colorScale(d));
+      select(this).select('svg path').attr('fill', colorScale(d));
     });
 
   // Apply inactive class to ALL items
@@ -811,24 +831,24 @@ function renderLegend(branches, colorScale) {
 
 function updateLastUpdated(data) {
   if (!data || data.length === 0) return;
-  const maxDate = d3.max(data, (d) => d.ctime);
-  DOMElements.lastUpdated.textContent = `Last updated: ${d3.timeFormat(
+  const maxDate = max(data, (d) => d.ctime);
+  DOMElements.lastUpdated.textContent = `Last updated: ${timeFormat(
     '%b %d, %Y'
   )(maxDate)}`;
 }
 
-function parseCSV(csvText) {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map((h) => h.trim());
-  return lines.slice(1).map((line) => {
-    const values = line.match(/(".*?"|[^",\n]+)(?=\s*,|\s*$)/g) || [];
-    return headers.reduce((obj, header, i) => {
-      obj[header] = values[i] ? values[i].replace(/^"|"$/g, '').trim() : '';
-      return obj;
-    }, {});
-  });
-}
+// function parseCSV(csvText) {
+//   const lines = csvText.trim().split('\n');
+//   if (lines.length < 2) return [];
+//   const headers = lines[0].split(',').map((h) => h.trim());
+//   return lines.slice(1).map((line) => {
+//     const values = line.match(/(".*?"|[^",\n]+)(?=\s*,|\s*$)/g) || [];
+//     return headers.reduce((obj, header, i) => {
+//       obj[header] = values[i] ? values[i].replace(/^"|"$/g, '').trim() : '';
+//       return obj;
+//     }, {});
+//   });
+// }
 
 function handleError(error) {
   console.error('Error:', error);

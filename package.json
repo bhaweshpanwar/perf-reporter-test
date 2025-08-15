@@ -1,0 +1,28 @@
+{
+  "name": "perf-reporter-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhaweshpanwar/perf-reporter-test.git"
+  },
+  "keywords": [],
+  "author": "Bhawesh Panwar",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bhaweshpanwar/perf-reporter-test/issues"
+  },
+  "homepage": "https://github.com/bhaweshpanwar/perf-reporter-test#readme",
+  "dependencies": {
+    "d3": "^7.9.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.2"
+  }
+}

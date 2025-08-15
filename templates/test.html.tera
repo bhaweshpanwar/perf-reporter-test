@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ title }} - {{ plant }}</title>
 
-    <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
@@ -123,5 +122,5 @@
       // Tera will take the 'scales' data structure from Rust,
       const INITIAL_DATA = {{ scales | json_encode(pretty=false) | safe }};
     </script>
-    <script src="/static/wip/scripts/script.js"></script>
+    <script src="/static/dist/script.js"></script>
 </html>
