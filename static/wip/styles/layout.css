@@ -240,11 +240,11 @@ footer span {
 }
 
 kbd {
-  padding: 0.125rem 0.375rem; /*Replaces px-1.5 py-0.5 */
-  font-size: 0.75rem; /* Replaces text-xs */
-  font-weight: 600; /* Replaces font-semibold */
-  color: #1f2937; /* Replaces text-gray-800 */
-  background-color: #f3f4f6; /* Replaces bg-gray-100 */
-  border: 1px solid #e5e7eb; /* Replaces border-gray-200 */
-  border-radius: 0.25rem; /* Replaces rounded */
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1f2937;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
 }

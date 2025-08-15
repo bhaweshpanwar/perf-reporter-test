@@ -43,24 +43,21 @@ let currentChartData = [];
 //     .catch(handleError);
 // });
 
-// // Application entry point
-// document.addEventListener('DOMContentLoaded', () => {
-//   cacheDOMElements();
+// Application entry point
+document.addEventListener('DOMContentLoaded', () => {
+  cacheDOMElements();
 
-//   console.log("Data successfully received from server via 'Data Island'.");
+  allData = transformNestedDataToFlatArray(INITIAL_DATA);
 
-//   // Use the new, corrected function to transform the flat data.
-//   allData = transformFlatDataForChart(INITIAL_DATA);
-
-//   // The rest of your app initialization is exactly the same!
-//   const counts = d3.rollup(
-//     allData,
-//     (v) => v.length,
-//     (d) => d.scale
-//   );
-//   scaleDataCounts = new Map(counts);
-//   initializeApp(allData);
-// });
+  // The rest of your app initialization is exactly the same!
+  const counts = d3.rollup(
+    allData,
+    (v) => v.length,
+    (d) => d.scale
+  );
+  scaleDataCounts = new Map(counts);
+  initializeApp(allData);
+});
 
 // // Make sure this is the active entry point in your script SSR
 // document.addEventListener('DOMContentLoaded', () => {
@@ -91,55 +88,55 @@ let currentChartData = [];
 // });
 
 // This becomes the active entry point for the CSR model
-document.addEventListener('DOMContentLoaded', () => {
-  cacheDOMElements();
+// document.addEventListener('DOMContentLoaded', () => {
+//   cacheDOMElements();
 
-  // --- NEW CSR LOGIC ---
-  // 1. Get test and plant name from the browser's URL
-  // e.g., for a URL like "http://localhost:8080/mock/dbt2/plant",
-  // pathname is "/mock/dbt2/plant"
-  const pathParts = window.location.pathname.split('/').filter((p) => p);
-  const test = pathParts[1];
-  const plant = pathParts[2];
+//   // --- NEW CSR LOGIC ---
+//   // 1. Get test and plant name from the browser's URL
+//   // e.g., for a URL like "http://localhost:8080/mock/dbt2/plant",
+//   // pathname is "/mock/dbt2/plant"
+//   const pathParts = window.location.pathname.split('/').filter((p) => p);
+//   const test = pathParts[1];
+//   const plant = pathParts[2];
 
-  // 2. Check if we have the required parts, otherwise show an error.
-  if (!test || !plant) {
-    handleError(new Error('Could not determine test and plant from URL.'));
-    return;
-  }
+//   // 2. Check if we have the required parts, otherwise show an error.
+//   if (!test || !plant) {
+//     handleError(new Error('Could not determine test and plant from URL.'));
+//     return;
+//   }
 
-  // 3. Construct the API URL
-  const apiUrl = `/api/pf/${test}/${plant}`;
+//   // 3. Construct the API URL
+//   const apiUrl = `/api/pf/${test}/${plant}`;
 
-  // 4. Fetch the data from the new API endpoint
-  fetch(apiUrl)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.statusText}`);
-      }
-      return response.json(); // The Rust backend now sends JSON
-    })
-    .then((dataFromApi) => {
-      // 5. Transform the API data into the format the chart expects
-      allData = dataFromApi.map((d) => ({
-        branch: d.branch,
-        revision: d.commit, // Map `commit` from API to `revision`
-        scale: +(d.scale.match(/(\d+)/)?.[1] || 0), // Extract number from "100 Warehouses"
-        ctime: new Date(d.commit_date), // Convert date string to Date object
-        metric: +d.metric,
-        commit_message: `Commit: ${d.commit}`,
-      }));
+//   // 4. Fetch the data from the new API endpoint
+//   fetch(apiUrl)
+//     .then((response) => {
+//       if (!response.ok) {
+//         throw new Error(`Network response was not ok: ${response.statusText}`);
+//       }
+//       return response.json(); // The Rust backend now sends JSON
+//     })
+//     .then((dataFromApi) => {
+//       // 5. Transform the API data into the format the chart expects
+//       allData = dataFromApi.map((d) => ({
+//         branch: d.branch,
+//         revision: d.commit, // Map `commit` from API to `revision`
+//         scale: +(d.scale.match(/(\d+)/)?.[1] || 0), // Extract number from "100 Warehouses"
+//         ctime: new Date(d.commit_date), // Convert date string to Date object
+//         metric: +d.metric,
+//         commit_message: `Commit: ${d.commit}`,
+//       }));
 
-      const counts = d3.rollup(
-        allData,
-        (v) => v.length,
-        (d) => d.scale
-      );
-      scaleDataCounts = new Map(counts);
-      initializeApp(allData);
-    })
-    .catch(handleError);
-});
+//       const counts = d3.rollup(
+//         allData,
+//         (v) => v.length,
+//         (d) => d.scale
+//       );
+//       scaleDataCounts = new Map(counts);
+//       initializeApp(allData);
+//     })
+//     .catch(handleError);
+// });
 
 /**
  * [REVISED FUNCTION]
@@ -148,27 +145,36 @@ document.addEventListener('DOMContentLoaded', () => {
  * @param {Array<object>} initialData - The flat array from the backend.
  * @returns {Array<object>} A flat array of result objects ready for D3.
  */
-function transformFlatDataForChart(initialData) {
-  // Check if the data is a valid array. If not, return empty to prevent errors.
-  if (!Array.isArray(initialData)) {
-    console.error('Error: INITIAL_DATA is not an array!', initialData);
-    return [];
+function transformNestedDataToFlatArray(nestedData) {
+  const flatArray = [];
+
+  // --- THIS IS THE FIX ---
+  // The 'nestedData' variable IS the scales object itself.
+  const scales = nestedData;
+
+  // Now the rest of the function will work correctly.
+  for (const scale in scales) {
+    const branches = scales[scale];
+
+    for (const branchName in branches) {
+      const branchData = branches[branchName];
+
+      // The JS logic specifically uses the 'reversed' array from the data.
+      if (branchData.reversed) {
+        branchData.reversed.forEach((result) => {
+          flatArray.push({
+            branch: branchName,
+            scale: +scale, // Convert scale string to a number
+            revision: result.revision,
+            ctime: new Date(result.ctime * 1000), // Convert Unix timestamp to JS Date
+            metric: +result.metric, // Convert metric string/number to a number
+          });
+        });
+      }
+    }
   }
 
-  return initialData.map((d) => {
-    // Extract the numeric part from the scale string (e.g., "100 Warehouses" -> 100)
-    const scaleMatch = d.scale.match(/(\d+)/);
-    const numericScale = scaleMatch ? +scaleMatch[1] : 0;
-
-    return {
-      branch: d.branch,
-      scale: numericScale,
-      revision: d.commit, // Map the 'commit' field to 'revision'
-      ctime: new Date(d.commit_date), // Convert the date string into a JS Date object
-      metric: +d.metric, // Ensure the metric is a number
-      commit_message: `Commit: ${d.commit}`, // Construct a default commit message
-    };
-  });
+  return flatArray;
 }
 
 function initializeApp(data) {
@@ -588,7 +594,10 @@ function renderChart(data, colorScale) {
 
   setupTooltip(branchCircles, colorScale, xScale, yScale, margin);
 
-  clipArea.on('dblclick', resetZoom);
+  // --- CORRECTED LOGIC ---
+  // Attach the listener to the brush overlay, which is the element
+  // that actually receives the mouse events.
+  xAxisBrushGroup.on('dblclick', resetZoom);
   svg
     .on('mouseover', () => window.addEventListener('keydown', handleKeyDown))
     .on('mouseout', () => window.removeEventListener('keydown', handleKeyDown));
